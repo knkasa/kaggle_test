@@ -15,6 +15,7 @@ warnings.simplefilter('ignore')
 
 # df_train(1200000) df_test(800000)
 train_rows = 1_200_000
+test_rows = 800_000
 
 target = 'Premium Amount'
 use_featuretools = True
@@ -123,12 +124,14 @@ if use_pca:
     df_pca = pd.DataFrame(pca_final.fit_transform(df[input_cols]), columns=cols_list, index=df.index)
     df_pca.loc[:, target] = df[target]
 
-    df_train = df_pca.iloc[:train_rows].copy()
-    df_test = df_pca.iloc[train_rows:].copy()
+    df_train = df_pca.iloc[:int(train_rows*0.8)].copy()
+    df_val = df_pca.iloc[int(train_rows*0.8):-test_rows].copy()
+    df_test = df_pca.iloc[-test_rows:].copy()
     input_dim = num_pca_cols
 else:
-    df_train = df.iloc[:train_rows].copy()
-    df_test = df.iloc[train_rows:].copy()
+    df_train = df.iloc[:int(train_rows*0.8)].copy()
+    df_val = df.iloc[int(train_rows*0.8):-test_rows].copy()
+    df_test = df.iloc[-test_rows:].copy()
     input_dim = df.shape[1]-1
     if not use_featuretools:
         cols_list = input_cols
@@ -139,7 +142,7 @@ else:
 #df_test.loc[:, target] = scalery.transform(df_test[[target]])
 
 df_train.loc[:, target] = np.log(df_train[target]+1)
-df_test.loc[:, target] = np.log(df_test[target]+1)
+df_val.loc[:, target] = np.log(df_val[target]+1)
 
 if input_dim!=len(cols_list): raise Exception("input_din != len(cols_list)")
 print(f"input dim:{input_dim}")
@@ -171,7 +174,7 @@ predictor.fit(
     )
 
 print("Done fitting.")
-leaderboard = predictor.leaderboard(df_test, extra_info=True)
+leaderboard = predictor.leaderboard(df_val, extra_info=True)
 leaderboard.to_csv('/tmp/res_autogluon.csv', index=None)
 
 s3.upload_file('/tmp/res_autogluon.csv', bucket, key)
@@ -181,11 +184,17 @@ best_model_name = model_info['best_model']
 top_model_name = leaderboard['model'][0]
 
 print(f"best_model:{best_model_name}  top_model:{top_model_name}")
-preds_best = predictor.predict(df_test.drop(target, axis=1), model=best_model_name).values
-preds_top = predictor.predict(df_test.drop(target, axis=1), model=top_model_name).values
+preds_best = predictor.predict(df_val.drop(target, axis=1), model=best_model_name).values
+preds_top = predictor.predict(df_val.drop(target, axis=1), model=top_model_name).values
 
-score_best = np.sqrt(np.mean(np.square(df_test[target] - preds_best)))
-score_top = np.sqrt(np.mean(np.square(df_test[target] - preds_top)))
+score_best = np.sqrt(np.mean(np.square(df_val[target] - preds_best)))
+score_top = np.sqrt(np.mean(np.square(df_val[target] - preds_top)))
 print(f"score_best:{score_best}  score_top:{score_top}")
+
+inf_best = predictor.predict(df_test.drop(target, axis=1), model=best_model_name).values
+inf_best = predictor.predict(df_test.drop(target, axis=1), model=top_model_name).values
+
+df_test.loc[:, 'preds_best'] = np.exp(inf_best-1)
+df_test.loc[:, 'preds_top'] = np.exp(inf_best-1)
 
 print("All done!!")
