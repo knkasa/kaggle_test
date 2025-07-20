@@ -35,10 +35,6 @@ df_test = pd.read_csv('/tmp/test.csv', parse_dates=['Policy Start Date'])
 df = pd.concat([df_train, df_test], axis=0)
 df.reset_index(drop=True, inplace=True)
 
-# for testing
-df = df.head(train_rows)
-train_rows = int(len(df)*0.8)
-
 #print(df.isnull().sum()/len(df))
 
 numeric_cols = df.select_dtypes(include=[np.number]).columns[1:-1] # ignore id, target columns
