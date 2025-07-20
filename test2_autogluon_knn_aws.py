@@ -193,9 +193,9 @@ score_top = np.sqrt(np.mean(np.square(df_val[target] - preds_top)))
 print(f"score_best:{score_best}  score_top:{score_top}")
 
 inf_best = predictor.predict(df_test.drop(target, axis=1), model=best_model_name).values
-inf_best = predictor.predict(df_test.drop(target, axis=1), model=top_model_name).values
+inf_top = predictor.predict(df_test.drop(target, axis=1), model=top_model_name).values
 
 df_test.loc[:, 'preds_best'] = np.exp(inf_best-1)
-df_test.loc[:, 'preds_top'] = np.exp(inf_best-1)
+df_test.loc[:, 'preds_top'] = np.exp(inf_top-1)
 
 print("All done!!")
