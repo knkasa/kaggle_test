@@ -25,13 +25,18 @@ num_neighbors = 50
 #'''
 s3 = boto3.client('s3')
 bucket = 'test-ecs-s3'
+
 key = 'kaggle_input/train.csv'
 local_file = '/tmp/train.csv'
 s3.download_file(bucket, key, local_file)
-
 df_train = pd.read_csv('/tmp/train.csv', parse_dates=['Policy Start Date'])
 df_train = df_train.sample(frac=1, random_state=seed)
+
+key = 'kaggle_input/test.csv'
+local_file = '/tmp/test.csv'
+s3.download_file(bucket, key, local_file)
 df_test = pd.read_csv('/tmp/test.csv', parse_dates=['Policy Start Date'])
+
 df = pd.concat([df_train, df_test], axis=0)
 df.reset_index(drop=True, inplace=True)
 
@@ -176,9 +181,6 @@ predictor.fit(
 
 print("Done fitting.")
 leaderboard = predictor.leaderboard(df_val, extra_info=True)
-leaderboard.to_csv('/tmp/res_autogluon.csv', index=None)
-
-s3.upload_file('/tmp/res_autogluon.csv', bucket, key)
 
 model_info = predictor.info()
 best_model_name = model_info['best_model']
@@ -197,5 +199,10 @@ inf_top = predictor.predict(df_test.drop(target, axis=1), model=top_model_name).
 
 df_test.loc[:, 'preds_best'] = np.exp(inf_best-1)
 df_test.loc[:, 'preds_top'] = np.exp(inf_top-1)
+
+local_file = '/tmp/res_autogluon.csv'
+leaderboard.to_csv(local_file, index=None)
+key = 'kaggle_input/res_autogluon.csv'
+s3.upload_file(local_file, bucket, key)
 
 print("All done!!")
