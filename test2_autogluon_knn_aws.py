@@ -209,7 +209,7 @@ df_test.loc[:, 'preds_top'] = np.exp(inf_top-1)
 
 print('uploading result.')
 local_file = '/tmp/preds.csv'
-df.to_csv(local_file, index=None)
+df_test.to_csv(local_file, index=None)
 key = 'kaggle_output/preds.csv'
 s3.upload_file(local_file, bucket, key)
 
