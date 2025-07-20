@@ -107,7 +107,7 @@ if use_featuretools:
     feature_matrix = feature_matrix.fillna(feature_matrix.median())
     print(f"num aggregated cols:{feature_matrix.shape[1]}")
     cols_list = feature_matrix.columns
-    feature_matrix.loc[:, target] = df[target]
+    feature_matrix[target] = df[target].values
     df = feature_matrix.copy()
 
 pca = PCA()
