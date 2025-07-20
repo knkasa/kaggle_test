@@ -26,6 +26,7 @@ num_neighbors = 50
 s3 = boto3.client('s3')
 bucket = 'test-ecs-s3'
 
+print('downloading data...')
 key = 'kaggle_input/train.csv'
 local_file = '/tmp/train.csv'
 s3.download_file(bucket, key, local_file)
@@ -64,7 +65,12 @@ imputer = KNNImputer(n_neighbors=num_neighbors)
 df_impute1 = pd.DataFrame(imputer.fit_transform(df.loc[:100_000]), columns=df.columns, index=df.loc[:100_000].index)
 df_impute2 = pd.DataFrame(imputer.transform(df.loc[100_000:]), columns=df.columns, index=df.loc[100_000:].index)
 df = pd.concat([df_impute1, df_impute2], axis=0)
-df.to_parquet('train_imputed.parquet')
+
+print('uploading imputed data...')
+local_file = '/tmp/train_imputed.parquet'
+df.to_parquet(local_file)
+key = 'kaggle_input/train_imputed.parquet'
+s3.upload_file(local_file, bucket, key)
 #exit()
 #'''
 
@@ -153,6 +159,7 @@ df_val.loc[:, target] = np.log(df_val[target]+1)
 if input_dim!=len(cols_list): raise Exception("input_din != len(cols_list)")
 print(f"input dim:{input_dim}")
 
+print('training starting...')
 predictor = TabularPredictor(
     label=target,
     problem_type='regression',
@@ -200,9 +207,16 @@ inf_top = predictor.predict(df_test.drop(target, axis=1), model=top_model_name).
 df_test.loc[:, 'preds_best'] = np.exp(inf_best-1)
 df_test.loc[:, 'preds_top'] = np.exp(inf_top-1)
 
+print('uploading result.')
+local_file = '/tmp/preds.csv'
+df.to_csv(local_file, index=None)
+key = 'kaggle_output/preds.csv'
+s3.upload_file(local_file, bucket, key)
+
+print('uploading leaderboard.')
 local_file = '/tmp/res_autogluon.csv'
 leaderboard.to_csv(local_file, index=None)
-key = 'kaggle_input/res_autogluon.csv'
+key = 'kaggle_output/res_autogluon.csv'
 s3.upload_file(local_file, bucket, key)
 
 print("All done!!")
