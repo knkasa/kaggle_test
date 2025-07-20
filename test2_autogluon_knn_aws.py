@@ -9,7 +9,6 @@ from sklearn.impute import KNNImputer
 from autogluon.tabular import TabularPredictor
 import featuretools as ft
 import boto3
-
 import warnings
 warnings.simplefilter('ignore')
 
@@ -23,10 +22,16 @@ use_pca = True
 seed = 42
 num_neighbors = 50
 
-'''
-df_train = pd.read_csv('train.csv', parse_dates=['Policy Start Date'])
+#'''
+s3 = boto3.client('s3')
+bucket = 'test-ecs-s3'
+key = 'kaggle_input/train.csv'
+local_file = '/tmp/train.csv'
+s3.download_file(bucket, key, local_file)
+
+df_train = pd.read_csv('/tmp/train.csv', parse_dates=['Policy Start Date'])
 df_train = df_train.sample(frac=1, random_state=seed)
-df_test = pd.read_csv('test.csv', parse_dates=['Policy Start Date'])
+df_test = pd.read_csv('/tmp/test.csv', parse_dates=['Policy Start Date'])
 df = pd.concat([df_train, df_test], axis=0)
 df.reset_index(drop=True, inplace=True)
 
@@ -59,17 +64,17 @@ df_impute1 = pd.DataFrame(imputer.fit_transform(df.loc[:100_000]), columns=df.co
 df_impute2 = pd.DataFrame(imputer.transform(df.loc[100_000:]), columns=df.columns, index=df.loc[100_000:].index)
 df = pd.concat([df_impute1, df_impute2], axis=0)
 df.to_parquet('train_imputed.parquet')
-exit()
-'''
+#exit()
+#'''
 
-s3 = boto3.client('s3')
-bucket = 'test-ecs-s3'
-key = 'kaggle_input/train_imputed.parquet'
-local_file = '/tmp/train_imputed.parquet'
-s3.download_file(bucket, key, local_file)
+#s3 = boto3.client('s3')
+#bucket = 'test-ecs-s3'
+#key = 'kaggle_input/train_imputed.parquet'
+#local_file = '/tmp/train_imputed.parquet'
+#s3.download_file(bucket, key, local_file)
 
-df = pd.read_parquet('/tmp/train_imputed.parquet')
-input_cols = df.columns.difference([target])
+#df = pd.read_parquet('/tmp/train_imputed.parquet')
+#input_cols = df.columns.difference([target])
 
 if use_featuretools:
     df['id'] = range(len(df))
