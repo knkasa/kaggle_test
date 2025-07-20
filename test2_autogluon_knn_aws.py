@@ -64,10 +64,10 @@ exit()
 s3 = boto3.client('s3')
 bucket = 'test-ecs-s3'
 key = 'kaggle_input/train_imputed.parquet'
-local_file = '/temp/train_imputed.parquet'
+local_file = '/tmp/train_imputed.parquet'
 s3.download_file(bucket, key, local_file)
 
-df = pd.read_parquet('/temp/train_imputed.parquet')
+df = pd.read_parquet('/tmp/train_imputed.parquet')
 input_cols = df.columns.difference([target])
 
 if use_featuretools:
@@ -172,9 +172,9 @@ predictor.fit(
 
 print("Done fitting.")
 leaderboard = predictor.leaderboard(df_test, extra_info=True)
-leaderboard.to_csv('/temp/res_autogluon.csv', index=None)
+leaderboard.to_csv('/tmp/res_autogluon.csv', index=None)
 
-s3.upload_file('/temp/res_autogluon.csv', bucket, key)
+s3.upload_file('/tmp/res_autogluon.csv', bucket, key)
 
 model_info = predictor.info()
 best_model_name = model_info['best_model']
