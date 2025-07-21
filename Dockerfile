@@ -5,6 +5,6 @@ WORKDIR /app
 COPY requirements.txt /app
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /app
+COPY . .
 
-CMD ["python", "/app/test2_autogluon_knn_aws.py"]
+CMD ["python", "test2_autogluon_knn_aws.py"]
