@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app
 
-CMD ["python", "test2_autogluon_knn_aws.py"]
+CMD ["python", "/app/test2_autogluon_knn_aws.py"]
