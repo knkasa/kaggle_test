@@ -9,6 +9,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Set an explicit entrypoint to ensure predictable behavior
 CMD ["python", "test2_autogluon_knn_aws.py"]
 
